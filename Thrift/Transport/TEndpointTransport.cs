@@ -23,18 +23,17 @@ using System.Text;
 namespace Thrift.Transport
 {
 
-    abstract public class TEndpointTransport : TTransport
+    public abstract class TEndpointTransport : TTransport
     {
         protected long MaxMessageSize { get => Configuration.MaxMessageSize; }
         protected long KnownMessageSize { get; private set; }
         protected long RemainingMessageSize { get; private set; }
 
-        private readonly TConfiguration _configuration;
-        public override TConfiguration Configuration { get => _configuration; }
+        public override TConfiguration Configuration { get; }
 
         public TEndpointTransport( TConfiguration config)
         {
-            _configuration = config ?? new TConfiguration();
+            Configuration = config ?? new TConfiguration();
             Debug.Assert(Configuration != null);
 
             ResetConsumedMessageSize();

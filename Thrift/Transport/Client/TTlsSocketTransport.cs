@@ -33,24 +33,21 @@ namespace Thrift.Transport.Client
     {
         private readonly X509Certificate2 _certificate;
         private readonly RemoteCertificateValidationCallback _certValidator;
-        private readonly IPAddress _host;
         private readonly bool _isServer;
         private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
-        private readonly int _port;
         private readonly SslProtocols _sslProtocols;
         private readonly string _targetHost;
-        private TcpClient _client;
         private SslStream _secureStream;
         private int _timeout;
 
         public TTlsSocketTransport(TcpClient client, TConfiguration config,
-            X509Certificate2 certificate, bool isServer = false,
-            RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls12)
+                                   X509Certificate2 certificate, bool isServer = false,
+                                   RemoteCertificateValidationCallback certValidator = null,
+                                   LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+                                   SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
-            _client = client;
+            TcpClient = client;
             _certificate = certificate;
             _certValidator = certValidator;
             _localCertificateSelectionCallback = localCertificateSelectionCallback;
@@ -71,10 +68,10 @@ namespace Thrift.Transport.Client
         }
 
         public TTlsSocketTransport(IPAddress host, int port, TConfiguration config,
-            string certificatePath,
-            RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls12)
+                                   string certificatePath,
+                                   RemoteCertificateValidationCallback certValidator = null,
+                                   LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+                                   SslProtocols sslProtocols = SslProtocols.Tls12)
             : this(host, port, config, 0,
                 new X509Certificate2(certificatePath),
                 certValidator,
@@ -84,10 +81,10 @@ namespace Thrift.Transport.Client
         }
 
         public TTlsSocketTransport(IPAddress host, int port, TConfiguration config,
-            X509Certificate2 certificate = null,
-            RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls12)
+                                   X509Certificate2 certificate = null,
+                                   RemoteCertificateValidationCallback certValidator = null,
+                                   LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+                                   SslProtocols sslProtocols = SslProtocols.Tls12)
             : this(host, port, config, 0,
                 certificate,
                 certValidator,
@@ -97,14 +94,14 @@ namespace Thrift.Transport.Client
         }
 
         public TTlsSocketTransport(IPAddress host, int port, TConfiguration config, int timeout,
-            X509Certificate2 certificate,
-            RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls12)
+                                   X509Certificate2 certificate,
+                                   RemoteCertificateValidationCallback certValidator = null,
+                                   LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+                                   SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
-            _host = host;
-            _port = port;
+            Host = host;
+            Port = port;
             _timeout = timeout;
             _certificate = certificate;
             _certValidator = certValidator;
@@ -115,10 +112,10 @@ namespace Thrift.Transport.Client
         }
 
         public TTlsSocketTransport(string host, int port, TConfiguration config, int timeout,
-            X509Certificate2 certificate,
-            RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls12)
+                                   X509Certificate2 certificate,
+                                   RemoteCertificateValidationCallback certValidator = null,
+                                   LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+                                   SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
             try
@@ -126,11 +123,12 @@ namespace Thrift.Transport.Client
                 _targetHost = host;
 
                 var entry = Dns.GetHostEntry(host);
+
                 if (entry.AddressList.Length == 0)
                     throw new TTransportException(TTransportException.ExceptionType.Unknown, "unable to resolve host name");
 
-                _host = entry.AddressList[0];
-                _port = port;
+                Host = entry.AddressList[0];
+                Port = port;
                 _timeout = timeout;
                 _certificate = certificate;
                 _certValidator = certValidator;
@@ -147,37 +145,26 @@ namespace Thrift.Transport.Client
 
         public int Timeout
         {
-            set { _client.ReceiveTimeout = _client.SendTimeout = _timeout = value; }
+            set => TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout = value;
         }
 
-        public TcpClient TcpClient => _client;
+        public TcpClient TcpClient { get; private set; }
 
-        public IPAddress Host => _host;
+        public IPAddress Host { get; }
 
-        public int Port => _port;
+        public int Port { get; }
 
-        public override bool IsOpen
-        {
-            get
-            {
-                if (_client == null)
-                {
-                    return false;
-                }
-
-                return _client.Connected;
-            }
-        }
+        public override bool IsOpen => TcpClient is { Connected: true };
 
         private void InitSocket()
         {
-            _client = new TcpClient();
-            _client.ReceiveTimeout = _client.SendTimeout = _timeout;
-            _client.Client.NoDelay = true;
+            TcpClient = new TcpClient();
+            TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout;
+            TcpClient.Client.NoDelay = true;
         }
 
         private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain,
-            SslPolicyErrors sslValidationErrors)
+                                                 SslPolicyErrors sslValidationErrors)
         {
             return sslValidationErrors == SslPolicyErrors.None;
         }
@@ -189,24 +176,24 @@ namespace Thrift.Transport.Client
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if (_host == null)
+            if (Host == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
 
-            if (_port <= 0)
+            if (Port <= 0)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if (_client == null)
+            if (TcpClient == null)
             {
                 InitSocket();
             }
 
-            if (_client != null)
+            if (TcpClient != null)
             {
-                await _client.ConnectAsync(_host, _port);
+                await TcpClient.ConnectAsync(Host, Port, cancellationToken);
                 await SetupTlsAsync();
             }
         }
@@ -215,32 +202,29 @@ namespace Thrift.Transport.Client
         {
             var validator = _certValidator ?? DefaultCertificateValidator;
 
-            if (_localCertificateSelectionCallback != null)
-            {
-                _secureStream = new SslStream(_client.GetStream(), false, validator, _localCertificateSelectionCallback);
-            }
-            else
-            {
-                _secureStream = new SslStream(_client.GetStream(), false, validator);
-            }
+            _secureStream = new SslStream(TcpClient.GetStream(), false, validator, _localCertificateSelectionCallback);
 
             try
             {
                 if (_isServer)
                 {
                     // Server authentication
-                    await
-                        _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols,
-                            true);
+                    await _secureStream.AuthenticateAsServerAsync(
+                        _certificate,
+                        _certValidator != null,
+                        _sslProtocols,
+                        true
+                    );
                 }
                 else
                 {
                     // Client authentication
-                    var certs = _certificate != null
-                        ? new X509CertificateCollection {_certificate}
-                        : new X509CertificateCollection();
+                    var certs = new X509CertificateCollection
+                    {
+                        _certificate
+                    };
 
-                    var targetHost = _targetHost ?? _host.ToString();
+                    var targetHost = _targetHost ?? Host.ToString();
                     await _secureStream.AuthenticateAsClientAsync(targetHost, certs, _sslProtocols, true);
                 }
             }
@@ -257,10 +241,11 @@ namespace Thrift.Transport.Client
         public override void Close()
         {
             base.Close();
-            if (_client != null)
+
+            if (TcpClient != null)
             {
-                _client.Dispose();
-                _client = null;
+                TcpClient.Dispose();
+                TcpClient = null;
             }
 
             if (_secureStream != null)

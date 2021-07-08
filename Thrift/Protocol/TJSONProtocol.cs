@@ -617,7 +617,7 @@ namespace Thrift.Protocol
             var size = 0;
 
             // reduce len to ignore fill bytes
-            while ((len > 0) && (b[len - 1] == '='))
+            while (len > 0 && b[len - 1] == '=')
             {
                 --len;
             }

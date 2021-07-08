@@ -32,13 +32,7 @@ namespace Thrift.Collections
 
         public THashSet(int capacity)
         {
-            #if NET5_0
             Items = new HashSet<T>(capacity);
-            #elif NETFRAMEWORK || NETSTANDARD
-            Items = new HashSet<T>(/*capacity not supported*/);
-            #else
-            #error Unknown platform
-            #endif
         }
 
         public int Count => Items.Count;

@@ -30,8 +30,7 @@ namespace Thrift.Processor
     {
         //TODO: Localization
 
-        private readonly Dictionary<string, ITAsyncProcessor> _serviceProcessorMap =
-            new Dictionary<string, ITAsyncProcessor>();
+        private readonly Dictionary<string, ITAsyncProcessor> _serviceProcessorMap = new();
 
         public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
         {
@@ -46,45 +45,50 @@ namespace Thrift.Processor
             {
                 var message = await iprot.ReadMessageBeginAsync(cancellationToken);
 
-                if ((message.Type != TMessageType.Call) && (message.Type != TMessageType.Oneway))
+                if (message.Type != TMessageType.Call && message.Type != TMessageType.Oneway)
                 {
                     await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidMessageType,
                         "Message exType CALL or ONEWAY expected", cancellationToken);
+
                     return false;
                 }
 
                 // Extract the service name
                 var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
+
                 if (index < 0)
                 {
                     await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidProtocol,
                         $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?",
                         cancellationToken);
+
                     return false;
                 }
 
                 // Create a new TMessage, something that can be consumed by any TProtocol
-                var serviceName = message.Name.Substring(0, index);
-                ITAsyncProcessor actualProcessor;
-                if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
+                var serviceName = message.Name[..index];
+
+                if (!_serviceProcessorMap.TryGetValue(serviceName, out var actualProcessor))
                 {
                     await FailAsync(oprot, message, TApplicationException.ExceptionType.InternalError,
                         $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?",
                         cancellationToken);
+
                     return false;
                 }
 
                 // Create a new TMessage, removing the service name
                 var newMessage = new TMessage(
-                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
+                    message.Name[(serviceName.Length + TMultiplexedProtocol.Separator.Length)..],
                     message.Type,
                     message.SeqID);
 
                 // Dispatch processing to the stored processor
-                return
-                    await
-                        actualProcessor.ProcessAsync(new StoredMessageProtocol(iprot, newMessage), oprot,
-                            cancellationToken);
+                return await actualProcessor.ProcessAsync(
+                    new StoredMessageProtocol(iprot, newMessage),
+                    oprot,
+                    cancellationToken
+                );
             }
             catch (IOException)
             {
@@ -104,7 +108,7 @@ namespace Thrift.Processor
         }
 
         private async Task FailAsync(TProtocol oprot, TMessage message, TApplicationException.ExceptionType extype,
-            string etxt, CancellationToken cancellationToken)
+                                     string etxt, CancellationToken cancellationToken)
         {
             var appex = new TApplicationException(extype, etxt);
 
@@ -118,7 +122,7 @@ namespace Thrift.Processor
 
         private class StoredMessageProtocol : TProtocolDecorator
         {
-            readonly TMessage _msgBegin;
+            private readonly TMessage _msgBegin;
 
             public StoredMessageProtocol(TProtocol protocol, TMessage messageBegin)
                 : base(protocol)

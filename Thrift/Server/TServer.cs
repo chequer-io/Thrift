@@ -29,19 +29,19 @@ namespace Thrift.Server
     public abstract class TServer
     {
         protected readonly ILogger Logger;
-        protected TProtocolFactory InputProtocolFactory;
-        protected TTransportFactory InputTransportFactory;
-        protected ITProcessorFactory ProcessorFactory;
-        protected TProtocolFactory OutputProtocolFactory;
-        protected TTransportFactory OutputTransportFactory;
+        protected readonly TProtocolFactory InputProtocolFactory;
+        protected readonly TTransportFactory InputTransportFactory;
+        protected readonly ITProcessorFactory ProcessorFactory;
+        protected readonly TProtocolFactory OutputProtocolFactory;
+        protected readonly TTransportFactory OutputTransportFactory;
 
         protected TServerEventHandler ServerEventHandler;
-        protected TServerTransport ServerTransport;
+        protected readonly TServerTransport ServerTransport;
 
         protected TServer(ITProcessorFactory processorFactory, TServerTransport serverTransport,
-            TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory,
-            TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory,
-            ILogger logger = null)
+                          TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory,
+                          TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory,
+                          ILogger logger = null)
         {
             ProcessorFactory = processorFactory ?? throw new ArgumentNullException(nameof(processorFactory));
             ServerTransport = serverTransport;
@@ -63,10 +63,9 @@ namespace Thrift.Server
         }
 
         // Log delegation? deprecated, use ILogger 
-        protected void LogError( string msg)
+        protected void LogError(string msg)
         {
-            if (Logger != null)
-                Logger.LogError(msg);
+            Logger?.LogError(msg);
         }
 
         public abstract void Stop();

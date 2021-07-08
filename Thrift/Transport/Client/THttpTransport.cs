@@ -39,7 +39,7 @@ namespace Thrift.Transport.Client
         private int _connectTimeout = 30000; // Timeouts in milliseconds
         private HttpClient _httpClient;
         private Stream _inputStream;
-        private MemoryStream _outputStream = new MemoryStream();
+        private MemoryStream _outputStream = new();
         private bool _isDisposed;
 
         public THttpTransport(Uri uri, TConfiguration config, IDictionary<string, string> customRequestHeaders = null, string userAgent = null)

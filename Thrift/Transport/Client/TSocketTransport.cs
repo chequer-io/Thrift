@@ -100,7 +100,7 @@ namespace Thrift.Transport.Client
         {
             get
             {
-                return (TcpClient != null) && TcpClient.Connected;
+                return TcpClient != null && TcpClient.Connected;
             }
         }
 
@@ -147,7 +147,7 @@ namespace Thrift.Transport.Client
                 {
                     TcpClient?.Dispose();
 
-                    base.Dispose(disposing);
+                    base.Dispose(true);
                 }
             }
             _isDisposed = true;

@@ -510,7 +510,7 @@ namespace Thrift.Protocol
             // if this happens to be a boolean field, the value is encoded in the exType
             if( ttype == TType.Bool)
             {
-                _boolValue = (compactType == Types.BooleanTrue);
+                _boolValue = compactType == Types.BooleanTrue;
             }
 
             // push the new field onto the field stack so we can keep the deltas going.
@@ -579,7 +579,7 @@ namespace Thrift.Protocol
             async ValueTask<bool> InternalCall()
             {
                 var data = await ReadByteAsync(cancellationToken);
-                return (data == Types.BooleanTrue);
+                return data == Types.BooleanTrue;
             }
         }
 

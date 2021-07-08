@@ -30,11 +30,10 @@ namespace Thrift.Protocol
         private bool _isDisposed;
         protected int RecursionDepth;
 
-        protected TTransport Trans;
+        protected readonly TTransport Trans;
 
-        protected static readonly TStruct AnonymousStruct = new TStruct(string.Empty);
-        protected static readonly TField StopField = new TField() { Type = TType.Stop };
-
+        protected static readonly TStruct AnonymousStruct = new(string.Empty);
+        protected static readonly TField StopField = new() { Type = TType.Stop };
 
         protected TProtocol(TTransport trans)
         {
@@ -45,7 +44,7 @@ namespace Thrift.Protocol
 
         public TTransport Transport => Trans;
 
-        protected int RecursionLimit { get; set; }
+        protected int RecursionLimit { get; }
 
         public void Dispose()
         {
@@ -75,12 +74,12 @@ namespace Thrift.Protocol
             {
                 if (disposing)
                 {
-                    (Trans as IDisposable)?.Dispose();
+                    Trans?.Dispose();
                 }
             }
+
             _isDisposed = true;
         }
-
 
         protected void CheckReadBytesAvailable(TSet set)
         {
@@ -101,7 +100,6 @@ namespace Thrift.Protocol
         // Returns the minimum amount of bytes needed to store the smallest possible instance of TType.
         public abstract int GetMinSerializedSize(TType type);
 
-
         public abstract Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default);
 
         public abstract Task WriteMessageEndAsync(CancellationToken cancellationToken = default);
@@ -111,9 +109,9 @@ namespace Thrift.Protocol
         public abstract Task WriteStructEndAsync(CancellationToken cancellationToken = default);
 
         public abstract Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken = default);
-                
+
         public abstract Task WriteFieldEndAsync(CancellationToken cancellationToken = default);
-                
+
         public abstract Task WriteFieldStopAsync(CancellationToken cancellationToken = default);
 
         public abstract Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken = default);

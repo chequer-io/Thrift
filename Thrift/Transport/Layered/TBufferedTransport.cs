@@ -17,7 +17,6 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +25,6 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TBufferedTransport : TLayeredTransport
     {
-        private readonly int DesiredBufferSize;
         private readonly Client.TMemoryBufferTransport ReadBuffer;
         private readonly Client.TMemoryBufferTransport WriteBuffer;
         private bool IsDisposed;
@@ -48,13 +46,11 @@ namespace Thrift.Transport
                 throw new ArgumentOutOfRangeException(nameof(bufSize), "Buffer size must be a positive number.");
             }
 
-            DesiredBufferSize = bufSize;
-
             WriteBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration, bufSize);
             ReadBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration, bufSize);
 
-            Debug.Assert(DesiredBufferSize == ReadBuffer.Capacity);
-            Debug.Assert(DesiredBufferSize == WriteBuffer.Capacity);
+            Debug.Assert(bufSize == ReadBuffer.Capacity);
+            Debug.Assert(bufSize == WriteBuffer.Capacity);
         }
 
         public TTransport UnderlyingTransport
@@ -110,8 +106,7 @@ namespace Thrift.Transport
 
             // buffer a new chunk of bytes from the underlying transport
             ReadBuffer.Length = ReadBuffer.Capacity;
-            ArraySegment<byte> bufSegment;
-            ReadBuffer.TryGetBuffer(out bufSegment);
+            ReadBuffer.TryGetBuffer(out ArraySegment<byte> bufSegment);
             ReadBuffer.Length = await InnerTransport.ReadAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
             ReadBuffer.Position = 0;
 
@@ -134,8 +129,7 @@ namespace Thrift.Transport
             var free = WriteBuffer.Capacity - WriteBuffer.Length;
             if (length > free)
             {
-                ArraySegment<byte> bufSegment;
-                WriteBuffer.TryGetBuffer(out bufSegment);
+                WriteBuffer.TryGetBuffer(out ArraySegment<byte> bufSegment);
                 await InnerTransport.WriteAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
                 WriteBuffer.SetLength(0);
             }
@@ -163,8 +157,7 @@ namespace Thrift.Transport
 
             if (WriteBuffer.Length > 0)
             {
-                ArraySegment<byte> bufSegment;
-                WriteBuffer.TryGetBuffer(out bufSegment);
+                WriteBuffer.TryGetBuffer(out ArraySegment<byte> bufSegment);
                 await InnerTransport.WriteAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
                 WriteBuffer.SetLength(0);
             }

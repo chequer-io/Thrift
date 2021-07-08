@@ -89,15 +89,14 @@ namespace Thrift.Transport
             await InnerTransport.ReadAllAsync(HeaderBuf, 0, HeaderSize, cancellationToken);
             int size = BinaryPrimitives.ReadInt32BigEndian(HeaderBuf);
 
-            if ((0 > size) || (size > Configuration.MaxFrameSize))  // size must be in the range 0 to allowed max
+            if (0 > size || size > Configuration.MaxFrameSize)  // size must be in the range 0 to allowed max
                 throw new TTransportException(TTransportException.ExceptionType.Unknown, $"Maximum frame size exceeded ({size} bytes)");
             UpdateKnownMessageSize(size + HeaderSize);
 
             ReadBuffer.SetLength(size);
             ReadBuffer.Seek(0, SeekOrigin.Begin);
 
-            ArraySegment<byte> bufSegment;
-            ReadBuffer.TryGetBuffer(out bufSegment);
+            ReadBuffer.TryGetBuffer(out ArraySegment<byte> bufSegment);
             await InnerTransport.ReadAllAsync(bufSegment.Array, 0, size, cancellationToken);
         }
 
@@ -111,7 +110,7 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            if (WriteBuffer.Length > (int.MaxValue - length))
+            if (WriteBuffer.Length > int.MaxValue - length)
             {
                 await FlushAsync(cancellationToken);
             }
@@ -128,8 +127,7 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            ArraySegment<byte> bufSegment;
-            WriteBuffer.TryGetBuffer(out bufSegment);
+            WriteBuffer.TryGetBuffer(out ArraySegment<byte> bufSegment);
 
             int dataLen = bufSegment.Count - HeaderSize;
             if (dataLen < 0)
@@ -169,7 +167,7 @@ namespace Thrift.Transport
         {
             if (IsDisposed)
             {
-                throw new ObjectDisposedException(this.GetType().Name);
+                throw new ObjectDisposedException(GetType().Name);
             }
         }
 

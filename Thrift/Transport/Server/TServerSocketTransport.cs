@@ -24,7 +24,6 @@ using Thrift.Transport.Client;
 
 namespace Thrift.Transport.Server
 {
-
     // ReSharper disable once InconsistentNaming
     public class TServerSocketTransport : TServerTransport
     {
@@ -56,28 +55,23 @@ namespace Thrift.Transport.Server
 
         public override bool IsOpen()
         {
-            return (_server != null) 
-				&& (_server.Server != null) 
-				&& _server.Server.IsBound;
+            return _server != null
+                   && _server.Server.IsBound;
         }
 
         public int GetPort()
         {
-            if ((_server != null) && (_server.Server != null) && (_server.Server.LocalEndPoint != null))
+            if (_server?.Server?.LocalEndPoint != null)
             {
                 if (_server.Server.LocalEndPoint is IPEndPoint server)
                 {
                     return server.Port;
                 }
-                else
-                {
-                    throw new TTransportException("ServerSocket is not a network socket");
-                }
+
+                throw new TTransportException("ServerSocket is not a network socket");
             }
-            else
-            {
-                throw new TTransportException("ServerSocket is not open");
-            }
+
+            throw new TTransportException("ServerSocket is not open");
         }
 
         public override void Listen()
@@ -127,13 +121,9 @@ namespace Thrift.Transport.Server
                 catch (Exception)
                 {
                     if (tSocketTransport != null)
-                    {
                         tSocketTransport.Dispose();
-                    }
                     else //  Otherwise, clean it up ourselves.
-                    {
-                        ((IDisposable)tcpClient).Dispose();
-                    }
+                        tcpClient.Dispose();
 
                     throw;
                 }
@@ -156,6 +146,7 @@ namespace Thrift.Transport.Server
                 {
                     throw new TTransportException("WARNING: Could not close server socket: " + ex);
                 }
+
                 _server = null;
             }
         }

@@ -55,23 +55,24 @@ namespace Thrift.Protocol.Utilities
                 throw new ArgumentNullException(nameof(src));
             }
 
-            dst[dstOff] = (byte) EncodeTable[(src[srcOff] >> 2) & 0x3F];
+            dst[dstOff] = (byte)EncodeTable[(src[srcOff] >> 2) & 0x3F];
 
-            if (len == 3)
+            switch (len)
             {
-                dst[dstOff + 1] = (byte) EncodeTable[((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
-                dst[dstOff + 2] = (byte) EncodeTable[((src[srcOff + 1] << 2) & 0x3C) | ((src[srcOff + 2] >> 6) & 0x03)];
-                dst[dstOff + 3] = (byte) EncodeTable[src[srcOff + 2] & 0x3F];
-            }
-            else if (len == 2)
-            {
-                dst[dstOff + 1] = (byte) EncodeTable[((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
-                dst[dstOff + 2] = (byte) EncodeTable[(src[srcOff + 1] << 2) & 0x3C];
-            }
-            else
-            {
-                // len == 1
-                dst[dstOff + 1] = (byte) EncodeTable[(src[srcOff] << 4) & 0x30];
+                case 3:
+                    dst[dstOff + 1] = (byte)EncodeTable[((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
+                    dst[dstOff + 2] = (byte)EncodeTable[((src[srcOff + 1] << 2) & 0x3C) | ((src[srcOff + 2] >> 6) & 0x03)];
+                    dst[dstOff + 3] = (byte)EncodeTable[src[srcOff + 2] & 0x3F];
+                    break;
+
+                case 2:
+                    dst[dstOff + 1] = (byte)EncodeTable[((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
+                    dst[dstOff + 2] = (byte)EncodeTable[(src[srcOff + 1] << 2) & 0x3C];
+                    break;
+
+                case 1:
+                    dst[dstOff + 1] = (byte)EncodeTable[(src[srcOff] << 4) & 0x30];
+                    break;
             }
         }
 
@@ -82,18 +83,15 @@ namespace Thrift.Protocol.Utilities
                 throw new ArgumentNullException(nameof(src));
             }
 
-            dst[dstOff] = (byte) ((DecodeTable[src[srcOff] & 0x0FF] << 2) | (DecodeTable[src[srcOff + 1] & 0x0FF] >> 4));
+            dst[dstOff] = (byte)((DecodeTable[src[srcOff] & 0x0FF] << 2) | (DecodeTable[src[srcOff + 1] & 0x0FF] >> 4));
 
             if (len > 2)
             {
-                dst[dstOff + 1] =
-                    (byte)
-                    (((DecodeTable[src[srcOff + 1] & 0x0FF] << 4) & 0xF0) | (DecodeTable[src[srcOff + 2] & 0x0FF] >> 2));
+                dst[dstOff + 1] = (byte)(((DecodeTable[src[srcOff + 1] & 0x0FF] << 4) & 0xF0) | (DecodeTable[src[srcOff + 2] & 0x0FF] >> 2));
+
                 if (len > 3)
                 {
-                    dst[dstOff + 2] =
-                        (byte)
-                        (((DecodeTable[src[srcOff + 2] & 0x0FF] << 6) & 0xC0) | DecodeTable[src[srcOff + 3] & 0x0FF]);
+                    dst[dstOff + 2] = (byte)(((DecodeTable[src[srcOff + 2] & 0x0FF] << 6) & 0xC0) | DecodeTable[src[srcOff + 3] & 0x0FF]);
                 }
             }
         }

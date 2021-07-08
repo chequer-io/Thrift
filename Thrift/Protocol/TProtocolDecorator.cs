@@ -36,7 +36,7 @@ namespace Thrift.Protocol
         protected TProtocolDecorator(TProtocol protocol)
             : base(protocol.Transport)
         {
-            _wrappedProtocol = protocol ?? throw new ArgumentNullException(nameof(protocol));
+            _wrappedProtocol = protocol;
         }
 
         public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)

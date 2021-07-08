@@ -48,8 +48,10 @@ namespace Thrift.Transport.Server
         {
             if (!certificate.HasPrivateKey)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                    "Your server-certificate needs to have a private key");
+                throw new TTransportException(
+                    TTransportException.ExceptionType.Unknown,
+                    "Your server-certificate needs to have a private key"
+                );
             }
 
             _serverCertificate = certificate;
@@ -83,14 +85,12 @@ namespace Thrift.Transport.Server
 
         public override bool IsOpen()
         {
-            return (_server != null) 
-				&& (_server.Server != null) 
-				&& _server.Server.IsBound;
+            return _server is { Server: { IsBound: true } };
         }
 
         public int GetPort()
         {
-            if ((_server != null) && (_server.Server != null) && (_server.Server.LocalEndPoint != null))
+            if (_server?.Server?.LocalEndPoint != null)
             {
                 if (_server.Server.LocalEndPoint is IPEndPoint server)
                 {
@@ -146,7 +146,8 @@ namespace Thrift.Transport.Server
                 var tTlsSocket = new TTlsSocketTransport(
                     client, Configuration,
                     _serverCertificate, true, _clientCertValidator,
-                    _localCertificateSelectionCallback, _sslProtocols);
+                    _localCertificateSelectionCallback, _sslProtocols
+                );
 
                 await tTlsSocket.SetupTlsAsync();
 

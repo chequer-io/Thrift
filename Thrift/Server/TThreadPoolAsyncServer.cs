@@ -47,10 +47,10 @@ namespace Thrift.Server
 
         public struct Configuration
         {
-            public int MinWorkerThreads;
-            public int MaxWorkerThreads;
-            public int MinIOThreads;
-            public int MaxIOThreads;
+            public readonly int MinWorkerThreads;
+            public readonly int MaxWorkerThreads;
+            public readonly int MinIOThreads;
+            public readonly int MaxIOThreads;
 
             public Configuration(int min = DEFAULT_MIN_THREADS, int max = DEFAULT_MAX_THREADS)
             {
@@ -126,7 +126,7 @@ namespace Thrift.Server
         {
             lock (typeof(TThreadPoolAsyncServer))
             {
-                if ((threadConfig.MaxWorkerThreads > 0) || (threadConfig.MaxIOThreads > 0))
+                if (threadConfig.MaxWorkerThreads > 0 || threadConfig.MaxIOThreads > 0)
                 {
                     ThreadPool.GetMaxThreads(out int work, out int comm);
                     if (threadConfig.MaxWorkerThreads > 0)
@@ -137,7 +137,7 @@ namespace Thrift.Server
                         throw new Exception("Error: could not SetMaxThreads in ThreadPool");
                 }
 
-                if ((threadConfig.MinWorkerThreads > 0) || (threadConfig.MinIOThreads > 0))
+                if (threadConfig.MinWorkerThreads > 0 || threadConfig.MinIOThreads > 0)
                 {
                     ThreadPool.GetMinThreads(out int work, out int comm);
                     if (threadConfig.MinWorkerThreads > 0)

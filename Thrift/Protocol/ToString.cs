@@ -23,60 +23,76 @@ using Thrift.Protocol;
 
 namespace Thrift.Protocol
 {
-
-
     public static class ToStringExtensions
     {
-        public static void ToString(this object self, StringBuilder sb, bool first = true)
+        public static void ToString(this string str, StringBuilder sb, bool first = true)
+        {
+            if (!first)
+                sb.Append(", ");
+
+            sb.Append('"');
+            sb.Append(str);
+            sb.Append('"');
+        }
+
+        public static void ToString(this IDictionary dic, StringBuilder sb, bool first = true)
         {
             if (!first)
                 sb.Append(", ");
 
             bool first_child = true;
-            if (self is string) // string is IEnumerable
-            {
-                sb.Append('"');
-                sb.Append(self);
-                sb.Append('"');
-            }
-            else if (self is IDictionary)
-            {
-                sb.Append("{ ");
-                foreach (DictionaryEntry pair in (self as IDictionary))
-                {
-                    if (first_child)
-                        first_child = false;
-                    else
-                        sb.Append(",");
 
-                    sb.Append("{ ");
-                    pair.Key.ToString(sb);
-                    sb.Append(", ");
-                    pair.Value.ToString(sb);
-                    sb.Append("}");
-                }
-                sb.Append("}");
-            }
-            else if (self is IEnumerable)
+            sb.Append("{ ");
+
+            foreach (DictionaryEntry pair in dic)
             {
-                sb.Append("{ ");
-                foreach (var elm in (self as IEnumerable))
-                {
-                    elm.ToString(sb, first_child);
+                if (first_child)
                     first_child = false;
-                }
+                else
+                    sb.Append(",");
+
+                sb.Append("{ ");
+                pair.Key.ToString(sb);
+                sb.Append(", ");
+                pair.Value.ToString(sb);
                 sb.Append("}");
             }
-            else if (self is TBase)
+
+            sb.Append("}");
+        }
+
+        public static void ToString(this IEnumerable value, StringBuilder sb, bool first = true)
+        {
+            if (!first)
+                sb.Append(", ");
+
+            bool first_child = true;
+
+            sb.Append("{ ");
+
+            foreach (var elm in value)
             {
-                sb.Append((self as TBase).ToString());
+                elm.ToString(sb, first_child);
+                first_child = false;
             }
-            else
-            {
-                sb.Append(self != null?  self.ToString() : "<null>");
-            }
+
+            sb.Append("}");
+        }
+
+        public static void ToString(this TBase value, StringBuilder sb, bool first = true)
+        {
+            if (!first)
+                sb.Append(", ");
+
+            sb.Append(value);
+        }
+
+        public static void ToString(this object self, StringBuilder sb, bool first = true)
+        {
+            if (!first)
+                sb.Append(", ");
+
+            sb.Append(self != null ? self.ToString() : "<null>");
         }
     }
-
-
 }

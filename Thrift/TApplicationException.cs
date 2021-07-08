@@ -44,7 +44,7 @@ namespace Thrift
         private const int MessageTypeFieldId = 1;
         private const int ExTypeFieldId = 2;
 
-        public ExceptionType Type { get; private set; }
+        public ExceptionType Type { get; }
 
         public TApplicationException()
         {

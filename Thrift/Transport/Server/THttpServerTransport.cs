@@ -106,8 +106,8 @@ namespace Thrift.Transport.Server
             var transport = new TStreamTransport(context.Request.Body, context.Response.Body, Configuration);
             try
             {
-                var intrans = (InputTransportFactory != null) ? InputTransportFactory.GetTransport(transport) : transport;
-                var outtrans = (OutputTransportFactory != null) ? OutputTransportFactory.GetTransport(transport) : transport;
+                var intrans = InputTransportFactory != null ? InputTransportFactory.GetTransport(transport) : transport;
+                var outtrans = OutputTransportFactory != null ? OutputTransportFactory.GetTransport(transport) : transport;
 
                 var input = InputProtocolFactory.GetProtocol(intrans);
                 var output = OutputProtocolFactory.GetProtocol(outtrans);

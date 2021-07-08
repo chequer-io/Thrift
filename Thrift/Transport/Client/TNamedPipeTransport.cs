@@ -28,18 +28,18 @@ namespace Thrift.Transport.Client
     {
         private NamedPipeClientStream PipeStream;
         private readonly int ConnectTimeout;
-		private const int DEFAULT_CONNECT_TIMEOUT = 60 * 1000;   // Timeout.Infinite is not a good default
+        private const int DEFAULT_CONNECT_TIMEOUT = 60 * 1000; // Timeout.Infinite is not a good default
 
-        public TNamedPipeTransport(string pipe, TConfiguration config, int timeout = DEFAULT_CONNECT_TIMEOUT) 
+        public TNamedPipeTransport(string pipe, TConfiguration config, int timeout = DEFAULT_CONNECT_TIMEOUT)
             : this(".", pipe, config, timeout)
         {
         }
 
-        public TNamedPipeTransport(string server, string pipe, TConfiguration config, int timeout = DEFAULT_CONNECT_TIMEOUT) 
+        public TNamedPipeTransport(string server, string pipe, TConfiguration config, int timeout = DEFAULT_CONNECT_TIMEOUT)
             : base(config)
         {
-            var serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
-            ConnectTimeout = (timeout > 0) ? timeout : DEFAULT_CONNECT_TIMEOUT;
+            var serverName = !string.IsNullOrWhiteSpace(server) ? server : ".";
+            ConnectTimeout = timeout > 0 ? timeout : DEFAULT_CONNECT_TIMEOUT;
 
             PipeStream = new NamedPipeClientStream(serverName, pipe, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Anonymous);
         }
@@ -53,7 +53,7 @@ namespace Thrift.Transport.Client
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
             }
 
-            await PipeStream.ConnectAsync( ConnectTimeout, cancellationToken);
+            await PipeStream.ConnectAsync(ConnectTimeout, cancellationToken);
             ResetConsumedMessageSize();
         }
 
@@ -74,12 +74,11 @@ namespace Thrift.Transport.Client
             }
 
             CheckReadBytesAvailable(length);
-#if NETSTANDARD2_0
-            var numRead = await PipeStream.ReadAsync(buffer, offset, length, cancellationToken);
-#else
+
             var numRead = await PipeStream.ReadAsync(new Memory<byte>(buffer, offset, length), cancellationToken);
-#endif
+
             CountConsumedMessageBytes(numRead);
+
             return numRead;
         }
 
@@ -94,13 +93,10 @@ namespace Thrift.Transport.Client
             // there's a system limit around 0x10000 bytes that we hit otherwise
             // MSDN: "Pipe write operations across a network are limited to 65,535 bytes per write. For more information regarding pipes, see the Remarks section."
             var nBytes = Math.Min(15 * 4096, length); // 16 would exceed the limit
+
             while (nBytes > 0)
             {
-#if NETSTANDARD2_0
-                await PipeStream.WriteAsync(buffer, offset, nBytes, cancellationToken);
-#else
                 await PipeStream.WriteAsync(buffer.AsMemory(offset, nBytes), cancellationToken);
-#endif
                 offset += nBytes;
                 length -= nBytes;
                 nBytes = Math.Min(nBytes, length);
@@ -115,12 +111,11 @@ namespace Thrift.Transport.Client
             return Task.CompletedTask;
         }
 
-        
         protected override void Dispose(bool disposing)
         {
-            if(disposing) 
+            if (disposing)
             {
-              PipeStream?.Dispose();
+                PipeStream?.Dispose();
             }
         }
     }

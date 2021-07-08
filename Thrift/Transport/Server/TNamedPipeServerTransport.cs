@@ -28,7 +28,8 @@ using System.Security.Principal;
 namespace Thrift.Transport.Server
 {
     [Flags]
-    public enum NamedPipeClientFlags {
+    public enum NamedPipeClientFlags
+    {
         None = 0x00,
         OnlyLocalClients = 0x01
     };
@@ -40,10 +41,11 @@ namespace Thrift.Transport.Server
         ///     This is the address of the Pipe on the localhost.
         /// </summary>
         private readonly string _pipeAddress;
+
         private bool _asyncMode = true;
         private volatile bool _isPending = true;
-        private NamedPipeServerStream _stream = null;
-        private readonly bool _onlyLocalClients = false;  // compatibility default
+        private NamedPipeServerStream _stream;
+        private readonly bool _onlyLocalClients; // compatibility default
 
         public TNamedPipeServerTransport(string pipeAddress, TConfiguration config, NamedPipeClientFlags flags)
             : base(config)
@@ -60,7 +62,8 @@ namespace Thrift.Transport.Server
             _onlyLocalClients = false;
         }
 
-        public override bool IsOpen() {
+        public override bool IsOpen()
+        {
             return true;
         }
 
@@ -77,6 +80,7 @@ namespace Thrift.Transport.Server
                 {
                     if (_stream.IsConnected)
                         _stream.Disconnect();
+
                     _stream.Dispose();
                 }
                 finally
@@ -103,7 +107,6 @@ namespace Thrift.Transport.Server
                 const int outbuf = 4096;
                 var options = _asyncMode ? PipeOptions.Asynchronous : PipeOptions.None;
 
-
                 // TODO: "CreatePipeNative" ist only a workaround, and there are have basically two possible outcomes:
                 // - once NamedPipeServerStream() gets a CTOR that supports pipesec, remove CreatePipeNative()
                 // - if 31190 gets resolved before, use _stream.SetAccessControl(pipesec) instead of CreatePipeNative()
@@ -113,7 +116,8 @@ namespace Thrift.Transport.Server
                 try
                 {
                     var handle = CreatePipeNative(_pipeAddress, inbuf, outbuf, _onlyLocalClients);
-                    if ((handle != null) && (!handle.IsInvalid))
+
+                    if (handle is { IsInvalid: false })
                     {
                         _stream = new NamedPipeServerStream(PipeDirection.InOut, _asyncMode, false, handle);
                         handle = null; // we don't own it any longer
@@ -121,14 +125,14 @@ namespace Thrift.Transport.Server
                     else
                     {
                         handle?.Dispose();
-                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf/*, pipesec*/);
+                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf /*, pipesec*/);
                     }
                 }
                 catch (NotImplementedException) // Mono still does not support async, fallback to sync
                 {
                     if (_asyncMode)
                     {
-                        options &= (~PipeOptions.Asynchronous);
+                        options &= ~PipeOptions.Asynchronous;
                         _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
                         _asyncMode = false;
                     }
@@ -140,10 +144,7 @@ namespace Thrift.Transport.Server
             }
         }
 
-
         #region CreatePipeNative workaround
-
-
         [StructLayout(LayoutKind.Sequential)]
         internal class SECURITY_ATTRIBUTES
         {
@@ -152,7 +153,6 @@ namespace Thrift.Transport.Server
             internal int bInheritHandle = 0;
         }
 
-
         private const string Kernel32 = "kernel32.dll";
 
         [DllImport(Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
@@ -160,9 +160,7 @@ namespace Thrift.Transport.Server
             string lpName, uint dwOpenMode, uint dwPipeMode,
             uint nMaxInstances, uint nOutBufferSize, uint nInBufferSize, uint nDefaultTimeOut,
             SECURITY_ATTRIBUTES pipeSecurityDescriptor
-            );
-
-
+        );
 
         // Workaround: create the pipe via API call
         // we have to do it this way, since NamedPipeServerStream() for netstd still lacks a few CTORs and/or arguments
@@ -174,14 +172,16 @@ namespace Thrift.Transport.Server
         // - https://github.com/dotnet/corefx/issues/34400 Have a mechanism for lower privileged user to connect to a privileged user's pipe
         private static SafePipeHandle CreatePipeNative(string name, int inbuf, int outbuf, bool OnlyLocalClients)
         {
-            if (! RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return null; // Windows only
 
             var pinningHandle = new GCHandle();
+
             try
             {
                 // owner gets full access, everyone else read/write
                 var pipesec = new PipeSecurity();
+
                 using (var currentIdentity = WindowsIdentity.GetCurrent())
                 {
                     var sidOwner = currentIdentity.Owner;
@@ -196,8 +196,11 @@ namespace Thrift.Transport.Server
                 var secAttrs = new SECURITY_ATTRIBUTES();
                 byte[] sdBytes = pipesec.GetSecurityDescriptorBinaryForm();
                 pinningHandle = GCHandle.Alloc(sdBytes, GCHandleType.Pinned);
-                unsafe {
-                    fixed (byte* pSD = sdBytes) {
+
+                unsafe
+                {
+                    fixed (byte* pSD = sdBytes)
+                    {
                         secAttrs.lpSecurityDescriptor = (IntPtr)pSD;
                     }
                 }
@@ -209,13 +212,13 @@ namespace Thrift.Transport.Server
                 const uint PIPE_TYPE_BYTE = 0x00000000;
                 const uint PIPE_READMODE_BYTE = 0x00000000;
                 const uint PIPE_UNLIMITED_INSTANCES = 255;
-                const uint PIPE_ACCEPT_REMOTE_CLIENTS = 0x00000000;  // Connections from remote clients can be accepted and checked against the security descriptor for the pipe.
-                const uint PIPE_REJECT_REMOTE_CLIENTS = 0x00000008;  // Connections from remote clients are automatically rejected. 
+                const uint PIPE_ACCEPT_REMOTE_CLIENTS = 0x00000000; // Connections from remote clients can be accepted and checked against the security descriptor for the pipe.
+                const uint PIPE_REJECT_REMOTE_CLIENTS = 0x00000008; // Connections from remote clients are automatically rejected. 
 
                 // any extra flags we want to add
-                uint dwPipeModeXtra
-                    = (OnlyLocalClients ? PIPE_REJECT_REMOTE_CLIENTS : PIPE_ACCEPT_REMOTE_CLIENTS)
-                    ;
+                var dwPipeModeXtra = OnlyLocalClients
+                    ? PIPE_REJECT_REMOTE_CLIENTS
+                    : PIPE_ACCEPT_REMOTE_CLIENTS;
 
                 // create the pipe via API call
                 var rawHandle = CreateNamedPipe(
@@ -225,10 +228,11 @@ namespace Thrift.Transport.Server
                     PIPE_UNLIMITED_INSTANCES, (uint)inbuf, (uint)outbuf,
                     5 * 1000,
                     secAttrs
-                    );
+                );
 
                 // make a SafePipeHandle() from it
                 var handle = new SafePipeHandle(rawHandle, true);
+
                 if (handle.IsInvalid)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -241,7 +245,6 @@ namespace Thrift.Transport.Server
                     pinningHandle.Free();
             }
         }
-
         #endregion
 
         protected override async ValueTask<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
@@ -259,15 +262,10 @@ namespace Thrift.Transport.Server
 
                 return trans;
             }
-            catch (TTransportException)
+            catch (Exception e) when (e is TTransportException or TaskCanceledException)
             {
                 Close();
                 throw;
-            }
-            catch (TaskCanceledException)
-            {
-                Close();
-                throw;  // let it bubble up
             }
             catch (Exception e)
             {
@@ -286,7 +284,7 @@ namespace Thrift.Transport.Server
                 PipeStream = stream;
             }
 
-            public override bool IsOpen => PipeStream != null && PipeStream.IsConnected;
+            public override bool IsOpen => PipeStream is { IsConnected: true };
 
             public override Task OpenAsync(CancellationToken cancellationToken)
             {
@@ -307,11 +305,9 @@ namespace Thrift.Transport.Server
                 }
 
                 CheckReadBytesAvailable(length);
-#if NETSTANDARD2_0
-                var numBytes = await PipeStream.ReadAsync(buffer, offset, length, cancellationToken);
-#else
+
                 var numBytes = await PipeStream.ReadAsync(buffer.AsMemory(offset, length), cancellationToken);
-#endif
+
                 CountConsumedMessageBytes(numBytes);
                 return numBytes;
             }
@@ -327,13 +323,10 @@ namespace Thrift.Transport.Server
                 // there's a system limit around 0x10000 bytes that we hit otherwise
                 // MSDN: "Pipe write operations across a network are limited to 65,535 bytes per write. For more information regarding pipes, see the Remarks section."
                 var nBytes = Math.Min(15 * 4096, length); // 16 would exceed the limit
+
                 while (nBytes > 0)
                 {
-#if NET5_0
                     await PipeStream.WriteAsync(buffer.AsMemory(offset, nBytes), cancellationToken);
-#else
-                    await PipeStream.WriteAsync(buffer, offset, nBytes, cancellationToken);
-#endif
                     offset += nBytes;
                     length -= nBytes;
                     nBytes = Math.Min(nBytes, length);

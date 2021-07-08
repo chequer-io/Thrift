@@ -67,7 +67,7 @@ namespace Thrift.Transport.Client
                 return _bytesUsed;
             }
             set {
-                if ((Bytes.Length < value) || (Bytes.Length > (10 * value)))
+                if (Bytes.Length < value || Bytes.Length > 10 * value)
                     Array.Resize(ref Bytes, Math.Max(2048, (int)(value * 1.25)));
                 _bytesUsed = value;
             }
@@ -89,7 +89,7 @@ namespace Thrift.Transport.Client
 
         public override void Close()
         {
-            /** do nothing **/
+            // DO NOTHING
         }
 
         public void Seek(int delta, SeekOrigin origin)
@@ -110,7 +110,7 @@ namespace Thrift.Transport.Client
                     throw new ArgumentException(nameof(origin));
             }
 
-            if ((0 > newPos) || (newPos > _bytesUsed))
+            if (0 > newPos || newPos > _bytesUsed)
                 throw new ArgumentException(nameof(origin));
             Position = newPos;
 

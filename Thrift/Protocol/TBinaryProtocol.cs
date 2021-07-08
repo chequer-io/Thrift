@@ -34,8 +34,8 @@ namespace Thrift.Protocol
         protected const uint VersionMask = 0xffff0000;
         protected const uint Version1 = 0x80010000;
 
-        protected bool StrictRead;
-        protected bool StrictWrite;
+        protected readonly bool StrictRead;
+        protected readonly bool StrictWrite;
 
         // minimize memory allocations by means of an preallocated bytes buffer
         // The value of 128 is arbitrarily chosen, the required minimum size must be sizeof(long)
@@ -219,7 +219,7 @@ namespace Thrift.Protocol
             var size = await ReadI32Async(cancellationToken);
             if (size < 0)
             {
-                var version = (uint) size & VersionMask;
+                var version = (uint)size & VersionMask;
                 if (version != Version1)
                 {
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
@@ -236,7 +236,7 @@ namespace Thrift.Protocol
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
                         "Missing version in ReadMessageBegin, old client?");
                 }
-                message.Name = (size > 0) ? await ReadStringBodyAsync(size, cancellationToken) : string.Empty;
+                message.Name = size > 0 ? await ReadStringBodyAsync(size, cancellationToken) : string.Empty;
                 message.Type = (TMessageType) await ReadByteAsync(cancellationToken);
                 message.SeqID = await ReadI32Async(cancellationToken);
             }

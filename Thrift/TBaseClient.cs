@@ -30,26 +30,21 @@ namespace Thrift
     /// </summary>
     public abstract class TBaseClient
     {
-        private readonly TProtocol _inputProtocol;
-        private readonly TProtocol _outputProtocol;
         private bool _isDisposed;
         private int _seqId;
         public readonly Guid ClientId = Guid.NewGuid();
 
         protected TBaseClient(TProtocol inputProtocol, TProtocol outputProtocol)
         {
-            _inputProtocol = inputProtocol ?? throw new ArgumentNullException(nameof(inputProtocol));
-            _outputProtocol = outputProtocol ?? throw new ArgumentNullException(nameof(outputProtocol));
+            InputProtocol = inputProtocol ?? throw new ArgumentNullException(nameof(inputProtocol));
+            OutputProtocol = outputProtocol ?? throw new ArgumentNullException(nameof(outputProtocol));
         }
 
-        public TProtocol InputProtocol => _inputProtocol;
+        public TProtocol InputProtocol { get; }
 
-        public TProtocol OutputProtocol => _outputProtocol;
+        public TProtocol OutputProtocol { get; }
 
-        public int SeqId
-        {
-            get { return ++_seqId; }
-        }
+        public int SeqId => Interlocked.Increment(ref _seqId);
 
         public virtual async Task OpenTransportAsync()
         {
@@ -58,14 +53,14 @@ namespace Thrift
 
         public virtual async Task OpenTransportAsync(CancellationToken cancellationToken)
         {
-            if (!_inputProtocol.Transport.IsOpen)
+            if (!InputProtocol.Transport.IsOpen)
             {
-                await _inputProtocol.Transport.OpenAsync(cancellationToken);
+                await InputProtocol.Transport.OpenAsync(cancellationToken);
             }
 
-            if (!_outputProtocol.Transport.IsOpen)
+            if (!OutputProtocol.Transport.IsOpen)
             {
-                await _outputProtocol.Transport.OpenAsync(cancellationToken);
+                await OutputProtocol.Transport.OpenAsync(cancellationToken);
             }
         }
 
@@ -80,8 +75,8 @@ namespace Thrift
             {
                 if (disposing)
                 {
-                    _inputProtocol?.Dispose();
-                    _outputProtocol?.Dispose();
+                    InputProtocol?.Dispose();
+                    OutputProtocol?.Dispose();
                 }
             }
 

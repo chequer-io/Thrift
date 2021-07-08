@@ -43,12 +43,12 @@ namespace Thrift.Collections
             // because KeyValuePair<K,V>.Equals() will not do what we want
             var fdict = first as IDictionary;
             var sdict = second as IDictionary;
-            if ((fdict != null) || (sdict != null))
+            if (fdict != null || sdict != null)
             {
-                if ((fdict == null) || (sdict == null))
+                if (fdict == null || sdict == null)
                     return false;
-                return TCollections.Equals(fdict.Keys, sdict.Keys)
-                    && TCollections.Equals(fdict.Values, sdict.Values);
+                return Equals(fdict.Keys, sdict.Keys)
+                    && Equals(fdict.Values, sdict.Values);
             }
 
             var fiter = first.GetEnumerator();
@@ -99,11 +99,11 @@ namespace Thrift.Collections
 
             foreach (var obj in enumerable)
             {
-                var objHash = (obj is IEnumerable enum2) ? GetHashCode(enum2) : obj.GetHashCode();
+                var objHash = obj is IEnumerable enum2 ? GetHashCode(enum2) : obj.GetHashCode();
 
                 unchecked
                 {
-                    hashcode = (hashcode * 397) ^ (objHash);
+                    hashcode = (hashcode * 397) ^ objHash;
                 }
             }
 
