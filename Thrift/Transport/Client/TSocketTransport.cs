@@ -18,7 +18,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -96,13 +95,7 @@ namespace Thrift.Transport.Client
             }
         }
 
-        public override bool IsOpen
-        {
-            get
-            {
-                return TcpClient != null && TcpClient.Connected;
-            }
-        }
+        public override bool IsOpen => TcpClient is { Connected: true };
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
@@ -123,7 +116,7 @@ namespace Thrift.Transport.Client
                 throw new InvalidOperationException("Invalid or not initialized tcp client");
             }
 
-            await TcpClient.ConnectAsync(Host, Port);
+            await TcpClient.ConnectAsync(Host, Port, cancellationToken);
             SetInputOutputStream();
         }
 

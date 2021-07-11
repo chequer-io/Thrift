@@ -28,13 +28,17 @@ namespace Thrift.Transport
     public abstract class TTransport : IDisposable
     {
         //TODO: think how to avoid peek byte
-        private readonly byte[] _peekBuffer = new byte[1];
+        private byte[] _peekBuffer;
         private bool _hasPeekByte;
 
         public abstract bool IsOpen { get; }
+
         public abstract TConfiguration Configuration { get; }
+
         public abstract void UpdateKnownMessageSize(long size);
+
         public abstract void CheckReadBytesAvailable(long numBytes);
+
         public void Dispose()
         {
             Dispose(true);
@@ -42,6 +46,11 @@ namespace Thrift.Transport
         }
 
         public async ValueTask<bool> PeekAsync(CancellationToken cancellationToken)
+        {
+            return await PeekAsync(1, cancellationToken);
+        }
+
+        public async ValueTask<bool> PeekAsync(int length, CancellationToken cancellationToken)
         {
             //If we already have a byte read but not consumed, do nothing.
             if (_hasPeekByte)
@@ -58,7 +67,9 @@ namespace Thrift.Transport
             //Try to read one byte. If succeeds we will need to store it for the next read.
             try
             {
-                var bytes = await ReadAsync(_peekBuffer, 0, 1, cancellationToken);
+                _peekBuffer = new byte[length];
+                var bytes = await ReadAsync(_peekBuffer, 0, length, cancellationToken);
+
                 if (bytes == 0)
                 {
                     return false;
@@ -72,7 +83,6 @@ namespace Thrift.Transport
             _hasPeekByte = true;
             return true;
         }
-
 
         public abstract Task OpenAsync(CancellationToken cancellationToken = default);
 
@@ -103,7 +113,6 @@ namespace Thrift.Transport
 #endif
         }
 
-
         public abstract ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
 
         public virtual async ValueTask<int> ReadAllAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -111,38 +120,44 @@ namespace Thrift.Transport
             cancellationToken.ThrowIfCancellationRequested();
 
             ValidateBufferArgs(buffer, offset, length);
+
             if (length <= 0)
                 return 0;
 
             // If we previously peeked a byte, we need to use that first.
             var totalBytes = 0;
+
             if (_hasPeekByte)
             {
-                buffer[offset++] = _peekBuffer[0];
-                _hasPeekByte = false;
-                if (1 == length)
+                while (_peekBuffer.Length > 0)
                 {
-                    return 1; // we're done
+                    buffer[offset++] = _peekBuffer[0];
+                    ++totalBytes;
+                    _peekBuffer = _peekBuffer.Length > 1 ? _peekBuffer[1..] : Array.Empty<byte>();
+
+                    if (length == totalBytes)
+                        return totalBytes;
                 }
-                ++totalBytes;
+
+                _hasPeekByte = false;
             }
 
             var remaining = length - totalBytes;
-            Debug.Assert(remaining > 0);  // any other possible cases should have been handled already 
+            Debug.Assert(remaining > 0); // any other possible cases should have been handled already 
+
             while (true)
             {
                 var numBytes = await ReadAsync(buffer, offset, remaining, cancellationToken);
                 totalBytes += numBytes;
+
                 if (totalBytes >= length)
-                {
                     return totalBytes; // we're done
-                }
 
                 if (numBytes <= 0)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                        "Cannot read, Remote side has closed");
-                }
+                    throw new TTransportException(
+                        TTransportException.ExceptionType.EndOfFile,
+                        "Cannot read, Remote side has closed"
+                    );
 
                 remaining -= numBytes;
                 offset += numBytes;
@@ -160,7 +175,6 @@ namespace Thrift.Transport
         }
 
         public abstract Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
-
 
         public abstract Task FlushAsync(CancellationToken cancellationToken);
 
