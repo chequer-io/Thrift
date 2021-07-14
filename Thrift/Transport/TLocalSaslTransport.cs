@@ -1,19 +1,18 @@
 using System;
-using System.Buffers.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol;
 using Thrift.Protocol.Sasl;
+using Thrift.Transport.Sasl;
 
 namespace Thrift.Transport
 {
     public class TLocalSaslTransport
     {
-        private readonly TProtocol _protocol;
+        protected readonly TProtocol _input;
+        protected readonly TProtocol _output;
 
-        private int headerLEngth => Username.Length + Password.Length + 2;
-
-        private NegotiationStatus _status;
+        public NegotiationStatus Status { get; set; }
 
         public string Username { get; set; }
 
@@ -21,24 +20,86 @@ namespace Thrift.Transport
 
         public string AuthType { get; private set; }
 
-        public TLocalSaslTransport(TProtocol protocol)
+        public byte[] Data { get; set; }
+
+        private TLocalSaslTransport _authTransport;
+
+        public TLocalSaslTransport(TProtocol input, TProtocol output)
         {
-            _protocol = protocol;
+            _input = input;
+            _output = output;
         }
 
-        public async ValueTask<(string username, string password)> ReadLDAPAuthenticationRequestAsync(CancellationToken cancellationToken = default)
+        protected TLocalSaslTransport()
         {
-            var header = await _protocol.ReadSaslHeaderAsync(cancellationToken);
-            var length = BinaryPrimitives.ReadInt32BigEndian(header[1..].AsSpan());
-            AuthType = await _protocol.ReadStringAsync(length, cancellationToken);
-            // TODO: Send Request
+        }
 
-            header = await _protocol.ReadSaslHeaderAsync(cancellationToken);
-            _status = (NegotiationStatus)header[0];
+        public async ValueTask ReadAsync(CancellationToken cancellationToken = default)
+        {
+            int length;
+            (Status, length) = await _input.ReadSaslHeaderAsync(cancellationToken);
 
-            length = BinaryPrimitives.ReadInt32BigEndian(header[1..].AsSpan());
+            Data = new byte[length];
+            await _input.Transport.ReadAllAsync(Data, 0, length, cancellationToken);
+        }
 
-            return await _protocol.ReadSaslLDAPAuthenticationInfoAsync(length, cancellationToken);
+        public async ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
+        {
+            int length;
+            (Status, length) = await _output.ReadSaslHeaderAsync(cancellationToken);
+
+            Data = new byte[length];
+            await _output.Transport.ReadAllAsync(Data, 0, length, cancellationToken);
+        }
+
+        public async ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            int length;
+            (Status, length) = await _input.ReadSaslHeaderAsync(cancellationToken);
+
+            AuthType = await _input.ReadStringAsync(length, cancellationToken);
+        }
+
+        public void CreateAuthTransport()
+        {
+            switch (AuthType)
+            {
+                case "PLAIN":
+                    _authTransport = new TLdapSaslTransport(_input, _output)
+                    {
+                        Status = Status,
+                        AuthType = AuthType
+                    };
+
+                    break;
+
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        public virtual ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            return _authTransport.ReadAuthRequestAsync(cancellationToken);
+        }
+
+        public virtual ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            return _authTransport.SendAuthRequestAsync(cancellationToken);
+        }
+
+        public async ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            await _output.WriteByteAsync((sbyte)Status, cancellationToken);
+            await _output.WriteStringAsync(AuthType, cancellationToken);
+            await _output.Transport.FlushAsync(cancellationToken);
+        }
+
+        public async ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
+        {
+            await _input.WriteByteAsync((sbyte)Status, cancellationToken);
+            await _input.WriteBinaryAsync(Data, cancellationToken);
+            await _input.Transport.FlushAsync(cancellationToken);
         }
     }
 }

@@ -18,6 +18,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol.Entities;
+using Thrift.Protocol.Sasl;
 
 namespace Thrift.Protocol
 {
@@ -243,7 +244,7 @@ namespace Thrift.Protocol
             return await _wrappedProtocol.ReadBinaryAsync(cancellationToken);
         }
 
-        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        public override ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
         {
             return _wrappedProtocol.ReadSaslHeaderAsync(cancellationToken);
         }

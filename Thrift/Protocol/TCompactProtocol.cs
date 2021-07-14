@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol.Entities;
+using Thrift.Protocol.Sasl;
 using Thrift.Transport;
 
 #pragma warning disable IDE0079 // unnecessary suppression
@@ -667,7 +668,7 @@ namespace Thrift.Protocol
             return buf;
         }
 
-        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        public override ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

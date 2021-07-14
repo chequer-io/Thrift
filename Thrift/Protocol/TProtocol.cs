@@ -20,6 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol.Entities;
+using Thrift.Protocol.Sasl;
 using Thrift.Transport;
 
 namespace Thrift.Protocol
@@ -198,7 +199,7 @@ namespace Thrift.Protocol
 
         public abstract ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default);
 
-        public abstract ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default);
+        public abstract ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default);
 
         public abstract ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default);
 

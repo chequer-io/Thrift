@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol.Entities;
+using Thrift.Protocol.Sasl;
 using Thrift.Transport;
 
 #pragma warning disable IDE0079 // unnecessary suppression
@@ -415,25 +416,29 @@ namespace Thrift.Protocol
             return buf;
         }
 
-        public override async ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             Transport.CheckReadBytesAvailable(5);
-            var buf = new byte[5];
-            await Trans.ReadAllAsync(buf, 0, 5, cancellationToken);
+            var statusBuf = new byte[1];
+            await Trans.ReadAllAsync(statusBuf, 0, 1, cancellationToken);
 
-            return buf;
+            var lengthBuf = new byte[4];
+            await Trans.ReadAllAsync(lengthBuf, 0, 4, cancellationToken);
+
+            return ((NegotiationStatus)statusBuf[0], BinaryPrimitives.ReadInt32BigEndian(lengthBuf));
         }
 
         public override async ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var bytes = new byte[packetLength];
-            await Transport.ReadAllAsync(bytes, 0, packetLength, cancellationToken);
+            await ReadByteAsync(cancellationToken);
 
-            bytes = bytes[1..];
+            var bytes = new byte[packetLength - 1];
+            await Transport.ReadAllAsync(bytes, 0, packetLength - 1, cancellationToken);
+
             var splitIndex = Array.IndexOf(bytes, 0);
 
             if (splitIndex == -1)

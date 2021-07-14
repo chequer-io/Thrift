@@ -18,6 +18,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol.Entities;
+using Thrift.Protocol.Sasl;
 
 namespace Thrift.Protocol
 {
@@ -74,7 +75,7 @@ namespace Thrift.Protocol
             _serviceName = serviceName;
         }
 
-        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             switch (message.Type)
             {
@@ -88,7 +89,7 @@ namespace Thrift.Protocol
             }
         }
 
-        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        public override ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
