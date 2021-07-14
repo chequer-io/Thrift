@@ -188,6 +188,30 @@ namespace Thrift.Protocol
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
 
+        public virtual async ValueTask<string> ReadStringAsync(int length, CancellationToken cancellationToken = default)
+        {
+            var buf = new byte[length];
+            await Trans.ReadAllAsync(buf, 0, length, cancellationToken);
+
+            return Encoding.UTF8.GetString(buf, 0, buf.Length);
+        }
+
         public abstract ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default);
+
+        public virtual async ValueTask<bool> PeekAsync(CancellationToken cancellationToken = default)
+        {
+            return await Transport.PeekAsync(cancellationToken);
+        }
+
+        public virtual ValueTask<bool> HasSaslRequestAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return new ValueTask<bool>(false);
+        }
     }
 }

@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Thrift.Protocol.Sasl;
 
 namespace Thrift.Transport
 {
@@ -71,9 +72,7 @@ namespace Thrift.Transport
                 var bytes = await ReadAsync(_peekBuffer, 0, length, cancellationToken);
 
                 if (bytes == 0)
-                {
                     return false;
-                }
             }
             catch (IOException)
             {
@@ -82,6 +81,14 @@ namespace Thrift.Transport
 
             _hasPeekByte = true;
             return true;
+        }
+
+        public virtual async ValueTask<bool> HasSaslRequestAsync(CancellationToken cancellationToken = default)
+        {
+            if (!await PeekAsync(5, cancellationToken))
+                return false;
+
+            return Enum.IsDefined(typeof(NegotiationStatus), _peekBuffer[0]);
         }
 
         public abstract Task OpenAsync(CancellationToken cancellationToken = default);
@@ -136,7 +143,11 @@ namespace Thrift.Transport
                     _peekBuffer = _peekBuffer.Length > 1 ? _peekBuffer[1..] : Array.Empty<byte>();
 
                     if (length == totalBytes)
+                    {
+                        _hasPeekByte = _peekBuffer.Length == 0;
+
                         return totalBytes;
+                    }
                 }
 
                 _hasPeekByte = false;

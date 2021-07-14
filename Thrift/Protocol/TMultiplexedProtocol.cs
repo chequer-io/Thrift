@@ -87,5 +87,15 @@ namespace Thrift.Protocol
                     break;
             }
         }
+
+        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

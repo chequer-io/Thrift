@@ -16,7 +16,10 @@
 // under the License.
 
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,64 +56,64 @@ namespace Thrift.Protocol
             StrictWrite = strictWrite;
         }
 
-        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (StrictWrite)
             {
-                var version = Version1 | (uint) message.Type;
-                await WriteI32Async((int) version, cancellationToken);
+                var version = Version1 | (uint)message.Type;
+                await WriteI32Async((int)version, cancellationToken);
                 await WriteStringAsync(message.Name, cancellationToken);
                 await WriteI32Async(message.SeqID, cancellationToken);
             }
             else
             {
                 await WriteStringAsync(message.Name, cancellationToken);
-                await WriteByteAsync((sbyte) message.Type, cancellationToken);
+                await WriteByteAsync((sbyte)message.Type, cancellationToken);
                 await WriteI32Async(message.SeqID, cancellationToken);
             }
         }
 
-        public override Task WriteMessageEndAsync(CancellationToken cancellationToken)
+        public override Task WriteMessageEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override Task WriteStructBeginAsync(TStruct @struct, CancellationToken cancellationToken)
+        public override Task WriteStructBeginAsync(TStruct @struct, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override Task WriteStructEndAsync(CancellationToken cancellationToken)
+        public override Task WriteStructEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
+        public override async Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await WriteByteAsync((sbyte) field.Type, cancellationToken);
+            await WriteByteAsync((sbyte)field.Type, cancellationToken);
             await WriteI16Async(field.ID, cancellationToken);
         }
 
-        public override Task WriteFieldEndAsync(CancellationToken cancellationToken)
+        public override Task WriteFieldEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async Task WriteFieldStopAsync(CancellationToken cancellationToken)
+        public override async Task WriteFieldStopAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            await WriteByteAsync((sbyte) TType.Stop, cancellationToken);
+            await WriteByteAsync((sbyte)TType.Stop, cancellationToken);
         }
 
-        public override async Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken)
+        public override async Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -121,45 +124,45 @@ namespace Thrift.Protocol
             await WriteI32Async(map.Count, cancellationToken);
         }
 
-        public override Task WriteMapEndAsync(CancellationToken cancellationToken)
+        public override Task WriteMapEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
+        public override async Task WriteListBeginAsync(TList list, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await WriteByteAsync((sbyte) list.ElementType, cancellationToken);
+            await WriteByteAsync((sbyte)list.ElementType, cancellationToken);
             await WriteI32Async(list.Count, cancellationToken);
         }
 
-        public override Task WriteListEndAsync(CancellationToken cancellationToken)
+        public override Task WriteListEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken)
+        public override async Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await WriteByteAsync((sbyte) set.ElementType, cancellationToken);
+            await WriteByteAsync((sbyte)set.ElementType, cancellationToken);
             await WriteI32Async(set.Count, cancellationToken);
         }
 
-        public override Task WriteSetEndAsync(CancellationToken cancellationToken)
+        public override Task WriteSetEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async Task WriteBoolAsync(bool b, CancellationToken cancellationToken)
+        public override async Task WriteBoolAsync(bool b, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await WriteByteAsync(b ? (sbyte) 1 : (sbyte) 0, cancellationToken);
+            await WriteByteAsync(b ? (sbyte)1 : (sbyte)0, cancellationToken);
         }
 
-        public override async Task WriteByteAsync(sbyte b, CancellationToken cancellationToken)
+        public override async Task WriteByteAsync(sbyte b, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -167,7 +170,8 @@ namespace Thrift.Protocol
 
             await Trans.WriteAsync(PreAllocatedBuffer, 0, 1, cancellationToken);
         }
-        public override async Task WriteI16Async(short i16, CancellationToken cancellationToken)
+
+        public override async Task WriteI16Async(short i16, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -176,7 +180,7 @@ namespace Thrift.Protocol
             await Trans.WriteAsync(PreAllocatedBuffer, 0, 2, cancellationToken);
         }
 
-        public override async Task WriteI32Async(int i32, CancellationToken cancellationToken)
+        public override async Task WriteI32Async(int i32, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -185,8 +189,7 @@ namespace Thrift.Protocol
             await Trans.WriteAsync(PreAllocatedBuffer, 0, 4, cancellationToken);
         }
 
-      
-        public override async Task WriteI64Async(long i64, CancellationToken cancellationToken)
+        public override async Task WriteI64Async(long i64, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -195,15 +198,14 @@ namespace Thrift.Protocol
             await Trans.WriteAsync(PreAllocatedBuffer, 0, 8, cancellationToken);
         }
 
-        public override async Task WriteDoubleAsync(double d, CancellationToken cancellationToken)
+        public override async Task WriteDoubleAsync(double d, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             await WriteI64Async(BitConverter.DoubleToInt64Bits(d), cancellationToken);
         }
 
-
-        public override async Task WriteBinaryAsync(byte[] bytes, CancellationToken cancellationToken)
+        public override async Task WriteBinaryAsync(byte[] bytes, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -211,21 +213,24 @@ namespace Thrift.Protocol
             await Trans.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
         }
 
-        public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+        public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var message = new TMessage();
             var size = await ReadI32Async(cancellationToken);
+
             if (size < 0)
             {
-                var version = (uint)size & VersionMask;
+                var version = unchecked((uint)size & VersionMask);
+
                 if (version != Version1)
                 {
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
                         $"Bad version in ReadMessageBegin: {version}");
                 }
-                message.Type = (TMessageType) (size & 0x000000ff);
+
+                message.Type = (TMessageType)(size & 0x000000ff);
                 message.Name = await ReadStringAsync(cancellationToken);
                 message.SeqID = await ReadI32Async(cancellationToken);
             }
@@ -236,119 +241,126 @@ namespace Thrift.Protocol
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
                         "Missing version in ReadMessageBegin, old client?");
                 }
+
                 message.Name = size > 0 ? await ReadStringBodyAsync(size, cancellationToken) : string.Empty;
-                message.Type = (TMessageType) await ReadByteAsync(cancellationToken);
+                message.Type = (TMessageType)await ReadByteAsync(cancellationToken);
                 message.SeqID = await ReadI32Async(cancellationToken);
             }
+
             return message;
         }
 
-        public override Task ReadMessageEndAsync(CancellationToken cancellationToken)
+        public override Task ReadMessageEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
+        public override ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return new ValueTask<TStruct>(AnonymousStruct);
         }
 
-        public override Task ReadStructEndAsync(CancellationToken cancellationToken)
+        public override Task ReadStructEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken)
+        public override async ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var type = (TType)await ReadByteAsync(cancellationToken);
+
             if (type == TType.Stop)
             {
                 return StopField;
             }
 
-            return new TField {
+            return new TField
+            {
                 Type = type,
                 ID = await ReadI16Async(cancellationToken)
             };
         }
 
-        public override Task ReadFieldEndAsync(CancellationToken cancellationToken)
+        public override Task ReadFieldEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken)
+        public override async ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
- 
+
             var map = new TMap
             {
-                KeyType = (TType) await ReadByteAsync(cancellationToken),
-                ValueType = (TType) await ReadByteAsync(cancellationToken),
+                KeyType = (TType)await ReadByteAsync(cancellationToken),
+                ValueType = (TType)await ReadByteAsync(cancellationToken),
                 Count = await ReadI32Async(cancellationToken)
             };
+
             CheckReadBytesAvailable(map);
             return map;
         }
 
-        public override Task ReadMapEndAsync(CancellationToken cancellationToken)
+        public override Task ReadMapEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken)
+        public override async ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var list = new TList
             {
-                ElementType = (TType) await ReadByteAsync(cancellationToken),
+                ElementType = (TType)await ReadByteAsync(cancellationToken),
                 Count = await ReadI32Async(cancellationToken)
             };
+
             CheckReadBytesAvailable(list);
             return list;
         }
 
-        public override Task ReadListEndAsync(CancellationToken cancellationToken)
+        public override Task ReadListEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken)
+        public override async ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var set = new TSet
             {
-                ElementType = (TType) await ReadByteAsync(cancellationToken),
+                ElementType = (TType)await ReadByteAsync(cancellationToken),
                 Count = await ReadI32Async(cancellationToken)
             };
+
             CheckReadBytesAvailable(set);
             return set;
         }
 
-        public override Task ReadSetEndAsync(CancellationToken cancellationToken)
+        public override Task ReadSetEndAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;
         }
 
-        public override async ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken)
+        public override async ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             return await ReadByteAsync(cancellationToken) == 1;
         }
 
-        public override async ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken)
+        public override async ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -356,7 +368,7 @@ namespace Thrift.Protocol
             return (sbyte)PreAllocatedBuffer[0];
         }
 
-        public override async ValueTask<short> ReadI16Async(CancellationToken cancellationToken)
+        public override async ValueTask<short> ReadI16Async(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -365,7 +377,7 @@ namespace Thrift.Protocol
             return result;
         }
 
-        public override async ValueTask<int> ReadI32Async(CancellationToken cancellationToken)
+        public override async ValueTask<int> ReadI32Async(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -376,7 +388,7 @@ namespace Thrift.Protocol
             return result;
         }
 
-        public override async ValueTask<long> ReadI64Async(CancellationToken cancellationToken)
+        public override async ValueTask<long> ReadI64Async(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -384,7 +396,7 @@ namespace Thrift.Protocol
             return BinaryPrimitives.ReadInt64BigEndian(PreAllocatedBuffer);
         }
 
-        public override async ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken)
+        public override async ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -392,7 +404,7 @@ namespace Thrift.Protocol
             return BitConverter.Int64BitsToDouble(d);
         }
 
-        public override async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken)
+        public override async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -403,7 +415,42 @@ namespace Thrift.Protocol
             return buf;
         }
 
-        public override async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken)
+        public override async ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Transport.CheckReadBytesAvailable(5);
+            var buf = new byte[5];
+            await Trans.ReadAllAsync(buf, 0, 5, cancellationToken);
+
+            return buf;
+        }
+
+        public override async ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var bytes = new byte[packetLength];
+            await Transport.ReadAllAsync(bytes, 0, packetLength, cancellationToken);
+
+            bytes = bytes[1..];
+            var splitIndex = Array.IndexOf(bytes, 0);
+
+            if (splitIndex == -1)
+                throw new InvalidDataException();
+
+            var username = bytes[..splitIndex];
+            var password = bytes[(splitIndex + 1)..];
+
+            return (Encoding.UTF8.GetString(username), Encoding.UTF8.GetString(password));
+        }
+
+        public override async ValueTask<bool> HasSaslRequestAsync(CancellationToken cancellationToken = default)
+        {
+            return await Transport.HasSaslRequestAsync(cancellationToken);
+        }
+
+        public override async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -411,7 +458,7 @@ namespace Thrift.Protocol
             return size > 0 ? await ReadStringBodyAsync(size, cancellationToken) : string.Empty;
         }
 
-        private async ValueTask<string> ReadStringBodyAsync(int size, CancellationToken cancellationToken)
+        private async ValueTask<string> ReadStringBodyAsync(int size, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -440,11 +487,11 @@ namespace Thrift.Protocol
                 case TType.I16: return sizeof(short);
                 case TType.I32: return sizeof(int);
                 case TType.I64: return sizeof(long);
-                case TType.String: return sizeof(int);  // string length
-                case TType.Struct: return 0;  // empty struct
-                case TType.Map: return sizeof(int);  // element count
-                case TType.Set: return sizeof(int);  // element count
-                case TType.List: return sizeof(int);  // element count
+                case TType.String: return sizeof(int); // string length
+                case TType.Struct: return 0; // empty struct
+                case TType.Map: return sizeof(int); // element count
+                case TType.Set: return sizeof(int); // element count
+                case TType.List: return sizeof(int); // element count
                 default: throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "unrecognized type code");
             }
         }

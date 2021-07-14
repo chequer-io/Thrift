@@ -820,6 +820,16 @@ namespace Thrift.Protocol
             return await ReadJsonBase64Async(cancellationToken);
         }
 
+        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         // Return the minimum number of bytes a type will consume on the wire
         public override int GetMinSerializedSize(TType type)
         {

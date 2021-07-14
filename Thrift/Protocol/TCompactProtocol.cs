@@ -667,6 +667,16 @@ namespace Thrift.Protocol
             return buf;
         }
 
+        public override ValueTask<byte[]> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public override async ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
