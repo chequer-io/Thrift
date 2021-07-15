@@ -439,7 +439,7 @@ namespace Thrift.Protocol
             var bytes = new byte[packetLength - 1];
             await Transport.ReadAllAsync(bytes, 0, packetLength - 1, cancellationToken);
 
-            var splitIndex = Array.IndexOf(bytes, 0);
+            var splitIndex = Array.IndexOf(bytes, (byte)0);
 
             if (splitIndex == -1)
                 throw new InvalidDataException();

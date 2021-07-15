@@ -15,7 +15,7 @@ namespace Thrift.Transport
 
         public NegotiationStatus Status { get; set; }
 
-        public string Username
+        public virtual string Username
         {
             get => _authTransport?.Username ?? throw new InvalidDataException();
             set
@@ -25,7 +25,7 @@ namespace Thrift.Transport
             }
         }
 
-        public string Password
+        public virtual string Password
         {
             get => _authTransport?.Password ?? throw new InvalidDataException();
             set

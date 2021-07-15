@@ -7,6 +7,10 @@ namespace Thrift.Transport.Sasl
 {
     public class TLdapSaslTransport : TLocalSaslTransport
     {
+        public override string Username { get; set; }
+
+        public override string Password { get; set; }
+
         public TLdapSaslTransport(TProtocol input, TProtocol output) : base(input, output)
         {
         }
