@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol;
@@ -14,9 +15,25 @@ namespace Thrift.Transport
 
         public NegotiationStatus Status { get; set; }
 
-        public string Username { get; set; }
+        public string Username
+        {
+            get => _authTransport?.Username ?? throw new InvalidDataException();
+            set
+            {
+                if (_authTransport != null)
+                    _authTransport.Username = value;
+            }
+        }
 
-        public string Password { get; set; }
+        public string Password
+        {
+            get => _authTransport?.Password ?? throw new InvalidDataException();
+            set
+            {
+                if (_authTransport != null)
+                    _authTransport.Password = value;
+            }
+        }
 
         public string AuthType { get; private set; }
 
@@ -58,9 +75,11 @@ namespace Thrift.Transport
             (Status, length) = await _input.ReadSaslHeaderAsync(cancellationToken);
 
             AuthType = await _input.ReadStringAsync(length, cancellationToken);
+
+            CreateAuthTransport();
         }
 
-        public void CreateAuthTransport()
+        private void CreateAuthTransport()
         {
             switch (AuthType)
             {
