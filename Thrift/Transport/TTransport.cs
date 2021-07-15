@@ -88,7 +88,7 @@ namespace Thrift.Transport
             if (!await PeekAsync(5, cancellationToken))
                 return false;
 
-            return Enum.IsDefined(typeof(NegotiationStatus), _peekBuffer[0]);
+            return Enum.IsDefined(typeof(NegotiationStatus), (int)_peekBuffer[0]);
         }
 
         public abstract Task OpenAsync(CancellationToken cancellationToken = default);
@@ -144,7 +144,7 @@ namespace Thrift.Transport
 
                     if (length == totalBytes)
                     {
-                        _hasPeekByte = _peekBuffer.Length == 0;
+                        _hasPeekByte = _peekBuffer.Length > 0;
 
                         return totalBytes;
                     }
