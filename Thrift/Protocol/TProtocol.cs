@@ -31,10 +31,24 @@ namespace Thrift.Protocol
         private bool _isDisposed;
         protected int RecursionDepth;
 
-        protected readonly TTransport Trans;
+        protected TTransport Trans;
 
         protected static readonly TStruct AnonymousStruct = new(string.Empty);
         protected static readonly TField StopField = new() { Type = TType.Stop };
+
+        public NegotiationStatus Status { get; set; }
+
+        public virtual string Username
+        {
+            get => throw new InvalidOperationException();
+            set => throw new InvalidOperationException();
+        }
+
+        public virtual string Password
+        {
+            get => throw new InvalidOperationException();
+            set => throw new InvalidOperationException();
+        }
 
         protected TProtocol(TTransport trans)
         {
@@ -183,6 +197,20 @@ namespace Thrift.Protocol
 
         public abstract ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken = default);
 
+        public abstract ValueTask ReadAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask ReadResponseAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default);
+
         public virtual async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken = default)
         {
             var buf = await ReadBinaryAsync(cancellationToken);
@@ -213,6 +241,11 @@ namespace Thrift.Protocol
             cancellationToken.ThrowIfCancellationRequested();
 
             return new ValueTask<bool>(false);
+        }
+
+        public void SwitchTransport(TTransport transport)
+        {
+            Trans = transport;
         }
     }
 }

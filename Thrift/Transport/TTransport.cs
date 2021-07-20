@@ -189,6 +189,11 @@ namespace Thrift.Transport
 
         public abstract Task FlushAsync(CancellationToken cancellationToken);
 
+        public virtual Task FlushAsync(bool isSasl, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException();
+        }
+
         protected abstract void Dispose(bool disposing);
     }
 }

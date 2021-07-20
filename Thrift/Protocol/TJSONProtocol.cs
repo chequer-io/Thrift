@@ -810,6 +810,41 @@ namespace Thrift.Protocol
             return await ReadJsonDoubleAsync(cancellationToken);
         }
 
+        public override ValueTask ReadAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public override async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken)
         {
             var buf = await ReadJsonStringAsync(false, cancellationToken);

@@ -89,6 +89,41 @@ namespace Thrift.Protocol
             }
         }
 
+        public override ValueTask ReadAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public override ValueTask<(NegotiationStatus status, int length)> ReadSaslHeaderAsync(CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();

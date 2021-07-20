@@ -1,60 +1,145 @@
-// Licensed to the Apache Software Foundation(ASF) under one
-// or more contributor license agreements.See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License. You may obtain a copy of the License at
-// 
-//     http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
 using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Thrift.Protocol;
 using Thrift.Protocol.Entities;
 using Thrift.Protocol.Sasl;
-using Thrift.Transport;
+using Thrift.Transport.Sasl;
 
-#pragma warning disable IDE0079 // unnecessary suppression
-#pragma warning disable IDE0066 // use switch expression
-
-namespace Thrift.Protocol
+namespace Thrift.Transport
 {
-    // ReSharper disable once InconsistentNaming
-    public class TBinaryProtocol : TProtocol
+    public class TSaslProtocol : TProtocol
     {
+        public TProtocol Server { get; init; }
+
         protected const uint VersionMask = 0xffff0000;
+
         protected const uint Version1 = 0x80010000;
 
         protected readonly bool StrictRead;
+
         protected readonly bool StrictWrite;
 
         // minimize memory allocations by means of an preallocated bytes buffer
+
         // The value of 128 is arbitrarily chosen, the required minimum size must be sizeof(long)
+
         private readonly byte[] PreAllocatedBuffer = new byte[128];
 
-        public TBinaryProtocol(TTransport trans)
+        public override string Username
+        {
+            get => AuthTransport?.Username ?? throw new InvalidDataException();
+            set
+            {
+                if (AuthTransport != null)
+                    AuthTransport.Username = value;
+            }
+        }
+
+        public override string Password
+        {
+            get => AuthTransport?.Password ?? throw new InvalidDataException();
+            set
+            {
+                if (AuthTransport != null)
+                    AuthTransport.Password = value;
+            }
+        }
+
+        public string AuthType { get; private set; }
+
+        public byte[] Data { get; set; }
+
+        public TSaslProtocol AuthTransport { get; private set; }
+
+        public TSaslProtocol(TTransport trans)
             : this(trans, false, true)
         {
         }
 
-        public TBinaryProtocol(TTransport trans, bool strictRead, bool strictWrite)
+        public TSaslProtocol(TTransport trans, bool strictRead, bool strictWrite)
             : base(trans)
         {
             StrictRead = strictRead;
             StrictWrite = strictWrite;
+        }
+
+        public override async ValueTask ReadAsync(CancellationToken cancellationToken = default)
+        {
+            int length;
+            (Status, length) = await ReadSaslHeaderAsync(cancellationToken);
+
+            Data = new byte[length];
+            await Transport.ReadAllAsync(Data, 0, length, cancellationToken);
+        }
+
+        public override async ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
+        {
+            var dest = Server ?? this;
+
+            int length;
+            (Status, length) = await dest.ReadSaslHeaderAsync(cancellationToken);
+
+            Data = new byte[length];
+            await dest.Transport.ReadAllAsync(Data, 0, length, cancellationToken);
+        }
+
+        public override async ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            int length;
+            (Status, length) = await ReadSaslHeaderAsync(cancellationToken);
+
+            AuthType = await ReadStringAsync(length, cancellationToken);
+
+            CreateAuthTransport();
+        }
+
+        private void CreateAuthTransport()
+        {
+            switch (AuthType)
+            {
+                case "PLAIN":
+                    AuthTransport = new TLdapSaslProtcol(Trans)
+                    {
+                        Status = Status,
+                        AuthType = AuthType,
+                        Server = Server
+                    };
+
+                    break;
+
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        public override ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            return AuthTransport.ReadAuthRequestAsync(cancellationToken);
+        }
+
+        public override ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
+        {
+            return AuthTransport.SendAuthRequestAsync(cancellationToken);
+        }
+
+        public override async ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+        {
+            var dest = Server ?? this;
+
+            await dest.WriteByteAsync((sbyte)Status, cancellationToken);
+            await dest.WriteStringAsync(AuthType, cancellationToken);
+            await dest.Transport.FlushAsync(cancellationToken);
+        }
+
+        public override async ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
+        {
+            await WriteByteAsync((sbyte)Status, cancellationToken);
+            await WriteBinaryAsync(Data, cancellationToken);
+            await Transport.FlushAsync(cancellationToken);
         }
 
         public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default)
@@ -217,6 +302,8 @@ namespace Thrift.Protocol
         public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            await ReadI32Async(cancellationToken);
 
             var message = new TMessage();
             var size = await ReadI32Async(cancellationToken);
@@ -405,41 +492,6 @@ namespace Thrift.Protocol
             return BitConverter.Int64BitsToDouble(d);
         }
 
-        public override ValueTask ReadAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
         public override async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -538,8 +590,8 @@ namespace Thrift.Protocol
 
         public class Factory : TProtocolFactory
         {
-            protected bool StrictRead;
-            protected bool StrictWrite;
+            protected readonly bool StrictRead;
+            protected readonly bool StrictWrite;
 
             public Factory()
                 : this(false, true)
@@ -554,7 +606,7 @@ namespace Thrift.Protocol
 
             public override TProtocol GetProtocol(TTransport trans)
             {
-                return new TBinaryProtocol(trans, StrictRead, StrictWrite);
+                return new TSaslProtocol(trans, StrictRead, StrictWrite);
             }
         }
     }

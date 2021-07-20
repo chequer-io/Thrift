@@ -135,6 +135,41 @@ namespace Thrift.Processor
                 cancellationToken.ThrowIfCancellationRequested();
                 return new ValueTask<TMessage>(_msgBegin);
             }
+
+            public override ValueTask ReadAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask ReadResponseAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask<(string username, string password)> ReadAuthRequestAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask SendAuthRequestAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask SendAuthenticationMethodAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
