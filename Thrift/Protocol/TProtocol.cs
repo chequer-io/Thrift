@@ -236,6 +236,11 @@ namespace Thrift.Protocol
             return await Transport.PeekAsync(cancellationToken);
         }
 
+        public virtual ValueTask PassAsync(CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException();
+        }
+
         public virtual ValueTask<bool> HasSaslRequestAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();

@@ -142,6 +142,20 @@ namespace Thrift.Transport
             await Transport.FlushAsync(cancellationToken);
         }
 
+        public override async ValueTask PassAsync(CancellationToken cancellationToken = default)
+        {
+            var dest = Server ?? this;
+
+            await dest.WriteByteAsync((sbyte)Status, cancellationToken);
+            await dest.WriteBinaryAsync(Data, cancellationToken);
+            await dest.Transport.FlushAsync(cancellationToken);
+
+            await dest.ReadAsync(cancellationToken);
+            Status = dest.Status;
+            Data = ((TSaslProtocol)dest).Data;
+            await SendDataToLocalAsync(cancellationToken);
+        }
+
         public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
