@@ -150,9 +150,7 @@ namespace Thrift.Transport
             await dest.WriteBinaryAsync(Data, cancellationToken);
             await dest.Transport.FlushAsync(cancellationToken);
 
-            await dest.ReadAsync(cancellationToken);
-            Status = dest.Status;
-            Data = ((TSaslProtocol)dest).Data;
+            await ReadResponseAsync(cancellationToken);
             await SendDataToLocalAsync(cancellationToken);
         }
 
