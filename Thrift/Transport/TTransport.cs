@@ -28,9 +28,9 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public abstract class TTransport : IDisposable
     {
-        //TODO: think how to avoid peek byte
-        private byte[] _peekBuffer;
-        private bool _hasPeekByte;
+        public byte[] PeekBuffer { get; set; }
+
+        private bool _hasPeekByte => PeekBuffer is { Length: > 0 };
 
         public abstract bool IsOpen { get; }
 
@@ -68,8 +68,8 @@ namespace Thrift.Transport
             //Try to read one byte. If succeeds we will need to store it for the next read.
             try
             {
-                _peekBuffer = new byte[length];
-                var bytes = await ReadAsync(_peekBuffer, 0, length, cancellationToken);
+                PeekBuffer = new byte[length];
+                var bytes = await ReadAsync(PeekBuffer, 0, length, cancellationToken);
 
                 if (bytes == 0)
                     return false;
@@ -79,7 +79,6 @@ namespace Thrift.Transport
                 return false;
             }
 
-            _hasPeekByte = true;
             return true;
         }
 
@@ -88,7 +87,7 @@ namespace Thrift.Transport
             if (!await PeekAsync(5, cancellationToken))
                 return false;
 
-            return Enum.IsDefined(typeof(NegotiationStatus), (int)_peekBuffer[0]);
+            return Enum.IsDefined(typeof(NegotiationStatus), (int)PeekBuffer[0]);
         }
 
         public abstract Task OpenAsync(CancellationToken cancellationToken = default);
@@ -136,21 +135,15 @@ namespace Thrift.Transport
 
             if (_hasPeekByte)
             {
-                while (_peekBuffer.Length > 0)
+                while (PeekBuffer.Length > 0)
                 {
-                    buffer[offset++] = _peekBuffer[0];
+                    buffer[offset++] = PeekBuffer[0];
                     ++totalBytes;
-                    _peekBuffer = _peekBuffer.Length > 1 ? _peekBuffer[1..] : Array.Empty<byte>();
+                    PeekBuffer = PeekBuffer.Length > 1 ? PeekBuffer[1..] : Array.Empty<byte>();
 
                     if (length == totalBytes)
-                    {
-                        _hasPeekByte = _peekBuffer.Length > 0;
-
                         return totalBytes;
-                    }
                 }
-
-                _hasPeekByte = false;
             }
 
             var remaining = length - totalBytes;
