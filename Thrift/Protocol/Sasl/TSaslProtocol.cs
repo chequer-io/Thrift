@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Thrift.Protocol;
 using Thrift.Protocol.Entities;
 using Thrift.Protocol.Sasl;
@@ -108,11 +110,11 @@ namespace Thrift.Transport
                         AuthType = AuthType,
                         Server = Server
                     };
-
                     break;
 
                 default:
-                    throw new InvalidOperationException();
+                    Log.Information($"Unsupported Auth Type Requested: {AuthType}");
+                    break;
             }
         }
 
