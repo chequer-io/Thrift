@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Thrift.Protocol;
 using Thrift.Protocol.Entities;
@@ -57,13 +56,11 @@ namespace Thrift.Transport
 
         public TSaslProtocol AuthTransport { get; private set; }
 
-        public TSaslProtocol(TTransport trans)
-            : this(trans, false, true)
+        public TSaslProtocol(TTransport trans) : this(trans, false, true)
         {
         }
 
-        public TSaslProtocol(TTransport trans, bool strictRead, bool strictWrite)
-            : base(trans)
+        public TSaslProtocol(TTransport trans, bool strictRead, bool strictWrite) : base(trans)
         {
             StrictRead = strictRead;
             StrictWrite = strictWrite;
@@ -110,6 +107,7 @@ namespace Thrift.Transport
                         AuthType = AuthType,
                         Server = Server
                     };
+
                     break;
 
                 default:
@@ -522,13 +520,11 @@ namespace Thrift.Transport
             cancellationToken.ThrowIfCancellationRequested();
 
             Transport.CheckReadBytesAvailable(5);
-            var statusBuf = new byte[1];
-            await Trans.ReadAllAsync(statusBuf, 0, 1, cancellationToken);
 
-            var lengthBuf = new byte[4];
-            await Trans.ReadAllAsync(lengthBuf, 0, 4, cancellationToken);
+            var buffer = new byte[5];
+            await Trans.ReadAllAsync(buffer, 0, 5, cancellationToken);
 
-            return ((NegotiationStatus)statusBuf[0], BinaryPrimitives.ReadInt32BigEndian(lengthBuf));
+            return ((NegotiationStatus)buffer[0], BinaryPrimitives.ReadInt32BigEndian(buffer.AsSpan(1)));
         }
 
         public override async ValueTask<(string username, string password)> ReadSaslLDAPAuthenticationInfoAsync(int packetLength, CancellationToken cancellationToken = default)
@@ -545,10 +541,10 @@ namespace Thrift.Transport
             if (splitIndex == -1)
                 throw new InvalidDataException();
 
-            var username = bytes[..splitIndex];
-            var password = bytes[(splitIndex + 1)..];
+            Memory<byte> username = bytes.AsMemory(0, splitIndex);
+            Memory<byte> password = bytes.AsMemory(splitIndex + 1);
 
-            return (Encoding.UTF8.GetString(username), Encoding.UTF8.GetString(password));
+            return (Encoding.UTF8.GetString(username.Span), Encoding.UTF8.GetString(password.Span));
         }
 
         public override async ValueTask<bool> HasSaslRequestAsync(CancellationToken cancellationToken = default)
