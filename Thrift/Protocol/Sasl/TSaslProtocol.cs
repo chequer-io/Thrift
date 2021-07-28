@@ -84,6 +84,9 @@ namespace Thrift.Transport
 
             Data = new byte[length];
             await dest.Transport.ReadAllAsync(Data, 0, length, cancellationToken);
+
+            if (Status is NegotiationStatus.TSASL_ERROR or NegotiationStatus.TSASL_BAD)
+                throw new TTransportException(Encoding.UTF8.GetString(Data));
         }
 
         public override async ValueTask ReadAuthenticationMethodAsync(CancellationToken cancellationToken = default)
