@@ -141,7 +141,7 @@ namespace Thrift.Transport
         public override async ValueTask SendDataToLocalAsync(CancellationToken cancellationToken = default)
         {
             await WriteByteAsync((sbyte)Status, cancellationToken);
-            await WriteBinaryAsync(Data, cancellationToken);
+            await WriteBinaryAsync(Data ?? Array.Empty<byte>(), cancellationToken);
             await Transport.FlushAsync(cancellationToken);
         }
 
@@ -150,7 +150,7 @@ namespace Thrift.Transport
             var dest = Server ?? this;
 
             await dest.WriteByteAsync((sbyte)Status, cancellationToken);
-            await dest.WriteBinaryAsync(Data, cancellationToken);
+            await dest.WriteBinaryAsync(Data ?? Array.Empty<byte>(), cancellationToken);
             await dest.Transport.FlushAsync(cancellationToken);
 
             await ReadResponseAsync(cancellationToken);
