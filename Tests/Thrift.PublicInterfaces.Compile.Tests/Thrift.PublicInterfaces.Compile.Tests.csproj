@@ -39,6 +39,11 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Impl" />
+    <Folder Include="Impl\Thrift5253" />
+  </ItemGroup>
+
   <Target Name="PreBuild" BeforeTargets="_GenerateRestoreProjectSpec;Restore;Compile">
     <!-- Check on the path -->
     <Exec Condition="'$(OS)' == 'Windows_NT'" Command="where thrift" ConsoleToMSBuild="true">
@@ -55,27 +60,18 @@
     <CreateProperty Condition="Exists('$(ProjectDir)/../../../../compiler/cpp/thrift')" Value="$(ProjectDir)/../../../../compiler/cpp/thrift">
       <Output TaskParameter="Value" PropertyName="PathToThrift" />
     </CreateProperty>
-    <Error 
-      Condition="!Exists('$(PathToThrift)')"
-      Text="Thrift executable could not be found."
-    />
+    <Error Condition="!Exists('$(PathToThrift)')" Text="Thrift executable could not be found." />
     <!-- Make sure the thrift version found is the same as the projects version -->
     <Exec Command="$(PathToThrift) -version" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="ThriftBinaryVersion" />
     </Exec>
-    <Error 
-      Condition="$('$(ThriftBinaryVersion)'::StartsWith('$(ThriftVersionOutput)')) == true"
-      Text="Thrift version returned: '$(ThriftBinaryVersion)' is not equal to the projects version '$(ThriftVersionOutput)'."
-    />
-    <Message
-      Importance="high"
-      Text="Generating tests with thrift binary: '$(PathToThrift)'"
-    />
+    <Error Condition="$('$(ThriftBinaryVersion)'::StartsWith('$(ThriftVersionOutput)')) == true" Text="Thrift version returned: '$(ThriftBinaryVersion)' is not equal to the projects version '$(ThriftVersionOutput)'." />
+    <Message Importance="high" Text="Generating tests with thrift binary: '$(PathToThrift)'" />
     <!-- Generate the thrift test files -->
     <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./CassandraTest.thrift" />
     <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./optional_required_default.thrift" />
-    <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./../../../../test/ThriftTest.thrift" />
-    <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./../../../../contrib/fb303/if/fb303.thrift" />
+    <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./../../test/ThriftTest.thrift" />
+    <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./../../contrib/fb303/if/fb303.thrift" />
     <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./Thrift5253.thrift" />
     <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./Thrift5320.thrift" />
     <Exec Command="$(PathToThrift) -gen netstd:wcf,union,serial -r ./Thrift5382.thrift" />
