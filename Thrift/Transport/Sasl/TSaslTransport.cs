@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
 using System.Threading;
@@ -11,7 +10,9 @@ namespace Thrift.Transport.Sasl
     {
         private bool _isDisposed;
 
+        private byte[] _lengthBuffer = new byte[4];
         private byte[] _dest = Array.Empty<byte>();
+        private readonly DataBuffer _dataBuffer = new();
 
         private int _lastIndex;
 
@@ -72,7 +73,29 @@ namespace Thrift.Transport.Sasl
                     "Cannot read from null inputstream");
             }
 
-            return await InputStream.ReadAsync(new Memory<byte>(buffer, offset, length), cancellationToken);
+            if (InputStream == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
+                    "Cannot read from null inputstream");
+            }
+
+            var memory = new Memory<byte>(buffer, offset, length);
+            var readsCount = _dataBuffer.Read(memory, length);
+
+            if (readsCount > 0)
+                return readsCount;
+
+            // Read Frame (4 bytes)
+            await InputStream.ReadExactlyAsync(_lengthBuffer, cancellationToken);
+            var frameLength = BinaryPrimitives.ReadInt32BigEndian(_lengthBuffer);
+
+            // DataBuffer Size Ensure
+            _dataBuffer.EnsureSize(frameLength);
+            await InputStream.ReadExactlyAsync(_dataBuffer.Buffer[..frameLength], cancellationToken);
+
+            // Fill Data to Buffer
+            var bytesRead = _dataBuffer.Read(memory, length);
+            return bytesRead;
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
