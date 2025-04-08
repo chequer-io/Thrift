@@ -318,8 +318,6 @@ namespace Thrift.Transport
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            await ReadI32Async(cancellationToken);
-
             var message = new TMessage();
             var size = await ReadI32Async(cancellationToken);
 
